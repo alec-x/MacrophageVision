@@ -1,0 +1,9 @@
+__pycache__/
+*.png
+.vscode/
+*.pickle
+build/
+*.pyc
+*.csv
+data/
+*.p
