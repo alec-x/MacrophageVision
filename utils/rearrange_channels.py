@@ -21,6 +21,9 @@ def main(raw_args=None):
     print("Input path: " + args.path)
     print("Output path: " + args.o)
 
+    if os.path.isfile(args.o) and args.o != ".\\rearranged_data": 
+        sys.exit("output file exists... exiting")
+        
     with open(args.path, "rb") as handle:
         samples = pickle.load(handle)
 
@@ -30,9 +33,6 @@ def main(raw_args=None):
         rearranged_samples.append([sample[i] for i in order])
 
     i = 0
-
-    if os.path.isfile(args.o) and args.o != ".\\rearranged_data": 
-        sys.exit("output file exists... exiting")
 
     pickle.dump(rearranged_samples, open( args.o, "wb" ))
 

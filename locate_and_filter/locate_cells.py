@@ -5,6 +5,7 @@
 # University of British Columbia
 # 2020
 from argparse import ArgumentParser as arg_parser
+from binarize_otsu import binarize_otsu
 import concurrent.futures
 import numpy as np
 import os, os.path
@@ -103,14 +104,6 @@ def process_cells_worker(path, box_size):
             output_stack.extend(np.stack(curr_frame, axis=0))
     return output_stack
 
-def binarize_otsu(img, min_obj_size):
-    arr = np.copy(img)
-    threshold = threshold_otsu(arr)
-    arr[arr < threshold] = 0
-    arr = arr.astype(bool)
-    arr = morph.remove_small_objects(arr, min_obj_size)
-    return arr
-
 def main(raw_args=None):
     parser = arg_parser(description="Create pickle of candidate cells from cell images in dir. \
         \n Input requires a directory with images under directories with corresponding cell name")
@@ -129,7 +122,10 @@ def main(raw_args=None):
     print("Image size: " + str(args.s) + "px")
     print("Input path: " + args.path)
     print("Output path: " + args.o)
-    
+
+    if os.path.isfile(args.o) and args.o != ".\\data": 
+        sys.exit("output file exists... exiting")
+            
     # Get a list of image paths of cells with labels
     print("\nLocating all images in directory")
     start_time = time.time()
@@ -162,9 +158,6 @@ def main(raw_args=None):
                 print(f'Image {num_imgs}/{tot_imgs}', end="\r")
                 num_imgs += 1
     print("\n")
-
-    if os.path.isfile(args.o) and args.o != ".\\data": 
-        sys.exit("output file exists... exiting")
 
     print("Saving at: " + path_full)
     unfiltered_samples = np.stack(unfiltered_samples, axis=0)
