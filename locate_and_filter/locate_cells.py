@@ -6,7 +6,6 @@
 # 2020
 from argparse import ArgumentParser as arg_parser
 import concurrent.futures
-import matplotlib.pyplot as plt
 import numpy as np
 import os, os.path
 import pickle
@@ -15,6 +14,7 @@ import scipy.ndimage as ndimage
 from skimage.filters import threshold_otsu
 import skimage.morphology as morph
 from skimage.segmentation import clear_border
+import sys
 import time
 
 # Return list of list of channels. Each list of a channel is a frame. 
@@ -163,15 +163,12 @@ def main(raw_args=None):
                 num_imgs += 1
     print("\n")
 
-    i = 0
-    path_full = args.o
-    while os.path.isfile(path_full): 
-        path_full = args.o + str(i) + ".p"
-        i += 1
+    if os.path.isfile(args.o) and args.o != ".\\data": 
+        sys.exit("output file exists... exiting")
 
     print("Saving at: " + path_full)
     unfiltered_samples = np.stack(unfiltered_samples, axis=0)
-    pickle.dump(unfiltered_samples, open( path_full, "wb" ))
+    pickle.dump(unfiltered_samples, open(path_full, "wb" ))
 
     elapsed = time.time() - start_time
     print("\nTotal time: " + str(elapsed))
