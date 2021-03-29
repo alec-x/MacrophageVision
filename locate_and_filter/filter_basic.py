@@ -14,11 +14,7 @@ import pickle
 from PIL import Image
 from scipy import ndimage as ndi
 from skimage import filters
-from skimage.feature import peak_local_max
-from skimage.morphology import disk
-import skimage.morphology as morph
-from skimage.segmentation import clear_border
-from skimage.segmentation import watershed
+import sys
 import time
 import cv2
 
@@ -31,13 +27,6 @@ def sample_valid(sample, box_size, failures, invalids):
     img_cd206 = np.copy(sample[3])
     min_size = 30
     
-
-    # Check if mitochondria stain is too dim
-    if np.percentile(img_mito, 99) - np.percentile(img_mito, 5) < 20:
-        failures["mito_dim"] += 1
-        invalids["mito_dim"].append(sample)
-        return False
-    
     mask_mito = binarize_otsu(img_mito, min_size)
     kernel = np.ones((3, 3), np.uint8)
     mask_erode = cv2.erode(mask_mito.astype(np.uint8), kernel, iterations=2)
@@ -45,7 +34,13 @@ def sample_valid(sample, box_size, failures, invalids):
     # Allow diagonal connections to count as one object
     connectivity = np.array(np.ones((3,3)), dtype=np.bool)
     _, num_objs = ndi.label(mask_erode, connectivity)
-    
+
+    # Check if mitochondria stain is too dim
+    if np.percentile(img_mito, 99) - np.percentile(img_mito, 5) < 20:
+        failures["mito_dim"] += 1
+        invalids["mito_dim"].append(sample)
+        return False
+            
     # Number of cells in sample using mito stain
     # After this, mask_mito should only have 0 = background 1 = mito location
     if num_objs > 1:
@@ -55,41 +50,16 @@ def sample_valid(sample, box_size, failures, invalids):
 
     # Size of mito stain in range cell size
     mito_size = np.sum(mask_mito) # num px
-    if mito_size < 130:
+    if mito_size < 150:
         failures["mito_size_small"] += 1
         invalids["mito_size_small"].append(sample)
         return False
 
-    if mito_size > 4000:
+    if mito_size > 2000:
         failures["mito_size_large"] += 1
         invalids["mito_size_large"].append(sample)
         return False
 
-    if mito_size < 120:
-        failures["mito_size_small"] += 1
-        invalids["mito_size_small"].append(sample)
-        return False
-        
-    # Check if crop area is correct
-    if not img_mito.shape == (box_size, box_size):
-        failures["crop_size"] += 1
-        invalids["crop_size"].append(sample)
-        return False
-    
-    # Check if picture is blank
-    unique, _ = np.unique(img_mito, return_counts=True)
-    # Check for blank image (less than 40 unique pixel intensities is blank)
-    if len(unique) < 20:
-        failures["blank"] += 1
-        invalids["blank"].append(sample)
-        return False
-
-    mass_centre = ndi.measurements.center_of_mass(mask_mito)
-    if not (0.4*box_size < mass_centre[0] < 0.6*box_size) and \
-       not (0.4*box_size < mass_centre[1] < 0.6*box_size):
-        failures["uncentred"] += 1
-        invalids["uncentred"].append(sample)
-        return False
     return True 
     
 def main(raw_args=None):
@@ -116,10 +86,8 @@ def main(raw_args=None):
     print("Output path: " + args.o)
     print("Output invalid samples instead: " + str(args.i))
 
-    if not args.i and os.path.isfile(args.o) and args.o != ".\\data": 
-        sys.exit("output file exists... exiting")
-    if args.i and os.path.isdir(args.o) and args.o != ".\\data":
-        sys.exit("output folder exists... exiting")
+    if os.path.exists(args.o): 
+        sys.exit("output path exists... exiting")
 
     print("\nLoading pickle")
     start_time = time.time()
