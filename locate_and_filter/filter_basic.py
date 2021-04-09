@@ -76,7 +76,7 @@ def main(raw_args=None):
                         help="output invalid samples instead of valid samples")
 
     # Default optional args
-    parser.set_defaults(s=96, o=".\\data", p=False, i=False, b=False)
+    parser.set_defaults(s=96, o=".\\default_filtered", p=False, i=False, b=False)
     
     args = parser.parse_args()
     

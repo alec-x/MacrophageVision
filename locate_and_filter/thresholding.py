@@ -62,7 +62,7 @@ def main(raw_args=None):
     parser.add_argument("-i", dest="n", action="store_true")
 
     # Default optional args
-    parser.set_defaults(o=".\\data", p=False, i=False)
+    parser.set_defaults(o=".\\default_thresholded", p=False, i=False)
     
     args = parser.parse_args(raw_args)
     start_time = time.time()

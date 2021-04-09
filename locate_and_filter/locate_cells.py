@@ -115,7 +115,7 @@ def main(raw_args=None):
                         help="out path of dataset (default=current dir")
     parser.add_argument("-t", action="store", type=int, \
                         help="num threads (default 8)")
-    parser.set_defaults(s=96, o=".\\data", t=8)
+    parser.set_defaults(s=96, o=".\\default_located", t=8)
     args = parser.parse_args(raw_args)
 
     print("Creating pickle with params...") 
