@@ -12,6 +12,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import os, os.path
+import pandas as pd
 import pickle
 from PIL import Image
 import sys
@@ -99,7 +100,7 @@ def main(raw_args=None):
     for sample in presamples:
         
         cd80_t, cd206_t = threshold(sample, img_size)
-        curr_output = [i, cd80_t, cd206_t]
+        curr_output = [cd80_t, cd206_t]
         for j in range(sample.shape[0]):
             tmp_img = Image.fromarray(sample[j])
             channel = img_type[j]
@@ -119,7 +120,7 @@ def main(raw_args=None):
         output.append(curr_output)
 
     print("\nSaving thresholds")
-    output = np.stack(output, axis=0)
+    output = pd.DataFrame.from_records(output)
     pickle.dump(output, open(args.o + "\\data.pickle", "wb" ))
 
     elapsed = time.time() - start_time
