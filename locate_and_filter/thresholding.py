@@ -105,8 +105,8 @@ def main(raw_args=None):
             tmp_img = Image.fromarray(sample[j])
             channel = img_type[j]
             curr_num = str(i).rjust(total_sig,'0')
-            path = args.o + "\\" + channel + "\\" + curr_num + channel + ".png"
-            tmp_img.save(path)
+            path = channel + "\\" + curr_num + channel + ".png"
+            tmp_img.save(args.o + "\\" + path)
             curr_output.append(path)
         try:
             pass
@@ -120,7 +120,8 @@ def main(raw_args=None):
         output.append(curr_output)
 
     print("\nSaving thresholds")
-    output = pd.DataFrame.from_records(output)
+    col_names = ["cd80_measure", "cd206_measure", "bf_path", "mito_path", "cd80_path", "cd206_path"]
+    output = pd.DataFrame.from_records(output, columns=col_names)
     pickle.dump(output, open(args.o + "\\data.pickle", "wb" ))
 
     elapsed = time.time() - start_time
