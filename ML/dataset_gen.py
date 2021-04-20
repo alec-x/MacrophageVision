@@ -1,15 +1,11 @@
 from __future__ import print_function, division
 from argparse import ArgumentParser as arg_parser
-import matplotlib.pyplot as plt
-import numpy as np
+import csv
 import pandas as pd
 import pickle
 import os
 import shutil
-from skimage import io, transform
-import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -40,40 +36,37 @@ def main(raw_args=None):
     print("\nLoading pickle")
     raw_data = pickle.load(open(data_file, "rb"))
 
-    data_selections = []
-
     print("\nApplying selection criteria")
-    selection = raw_data['cd80_measure'] > 50
-    data_selections.append(raw_data.loc[selection])
+    criterion = []
+    criterion.append(raw_data['cd80_measure'] > 50) 
+    criterion.append(raw_data['cd80_measure'] < 10)
 
-    selection = raw_data['cd80_measure'] < 10
-    data_selections.append(raw_data.loc[selection])
+    data_selections = []
+    for i, criteria in enumerate(criterion):
+        selected = raw_data.loc[criteria][["bf_path", "mito_path"]]
+        selected["label"] = i
+        data_selections.append(selected)
     
-    data_lists = []
-    for selected in data_selections:
-        list_1 = selected["bf_path"].tolist()
-        list_2 = selected["mito_path"].tolist()
-        data_lists.append(tuple(zip(list_1, list_2)))
+    processed = pd.concat(data_selections)
 
     print("\nSaving to output directory")
+    
     os.mkdir(args.o)
 
     class_name = 0
+            
+    with open(args.o + '\\labels.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',', 
+                           quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for row in processed.itertuples(index=False):
+            writer.writerow([row[0], row[1], row[2]])
+            in_bf    = args.path + "\\" + row[0]
+            in_mito  = args.path + "\\" + row[1]
+            out_bf   = args.o + "\\" + row[0].split("\\")[-1]
+            out_mito = args.o + "\\" + row[1].split("\\")[-1]
 
-    for data_list in data_lists:
-        base_name =  args.o + "\\" + str(class_name)
-        os.mkdir(base_name)
-
-        bf_name = base_name + "\\" + "bf"
-        mito_name = base_name + "\\" + "mito"
-        os.mkdir(bf_name)
-        os.mkdir(mito_name)
-
-        class_name += 1
-
-        for sample in data_list:
-            shutil.copy(args.path + "\\" + sample[0], bf_name)
-            shutil.copy(args.path + "\\" + sample[1], mito_name)
-    
+            shutil.copy(in_bf, out_bf)
+            shutil.copy(in_mito, out_mito)
+            
 if __name__=="__main__":
     main()
