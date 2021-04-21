@@ -51,17 +51,11 @@ class MacDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
-root = 'C:\\Users\\Alec\\Documents\\Source\\Repos\\MDLMacVis2\\data\\processed\\labeled'
-Macs_data = MacDataset(root_dir=root, csv_file=root + '\\' + 'labels.csv')
 
-fig = plt.figure()
+def macs_dataloader(path, batch_size=4, shuffle=True):
+    root = path
+    macs_data = MacDataset(root_dir=root, csv_file=root + '\\' + 'labels.csv')
 
-for i in range(len(Macs_data)):
-    sample = Macs_data[i]
-
-    print(i, sample['image'].shape, sample['label'])
-    if i == 3:
-        plt.imshow(sample['image'][1])
-        plt.show()
-        input()
-        break
+    dataloader = DataLoader(macs_data, batch_size=4,
+                            shuffle=True, num_workers=0)
+    return dataloader
