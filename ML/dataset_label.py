@@ -59,14 +59,17 @@ def main(raw_args=None):
         writer = csv.writer(csvfile, delimiter=',', 
                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
         for row in processed.itertuples(index=False):
-            writer.writerow([row[0], row[1], row[2]])
+            
             in_bf    = args.path + "\\" + row[0]
             in_mito  = args.path + "\\" + row[1]
-            out_bf   = args.o + "\\" + row[0].split("\\")[-1]
-            out_mito = args.o + "\\" + row[1].split("\\")[-1]
+            bf_file = row[0].split("\\")[-1]
+            mito_file =row[1].split("\\")[-1]
+            out_bf   = args.o + "\\" + bf_file
+            out_mito = args.o + "\\" + mito_file
 
             shutil.copy(in_bf, out_bf)
             shutil.copy(in_mito, out_mito)
+            writer.writerow([bf_file, mito_file, row[2]])
             
 if __name__=="__main__":
     main()
