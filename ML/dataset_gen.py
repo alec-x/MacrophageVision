@@ -36,15 +36,32 @@ class MacDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_name = os.path.join(self.root_dir,
+        img_name_bf = os.path.join(self.root_dir,
                                 self.macs_frame.iloc[idx, 0])
-        image = io.imread(img_name)
-        macs = self.macs_frame.iloc[idx, 1:]
-        macs = np.array([macs])
-        macs = macs.astype('float').reshape(-1, 2)
-        sample = {'image': image, 'macs': macs}
+        img_name_mito = os.path.join(self.root_dir,
+                                self.macs_frame.iloc[idx, 1])                                
+        
+        image_bf = io.imread(img_name_bf)
+        image_mito = io.imread(img_name_mito)
+        image = np.stack((image_bf, image_mito))
+        label = self.macs_frame.iloc[idx, 2]
+        sample = {'image': image, 'label': label}
 
         if self.transform:
             sample = self.transform(sample)
 
         return sample
+root = 'C:\\Users\\Alec\\Documents\\Source\\Repos\\MDLMacVis2\\data\\processed\\labeled'
+Macs_data = MacDataset(root_dir=root, csv_file=root + '\\' + 'labels.csv')
+
+fig = plt.figure()
+
+for i in range(len(Macs_data)):
+    sample = Macs_data[i]
+
+    print(i, sample['image'].shape, sample['label'])
+    if i == 3:
+        plt.imshow(sample['image'][1])
+        plt.show()
+        input()
+        break
