@@ -51,11 +51,3 @@ class MacDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
-
-def macs_dataloader(path, batch_size=4, shuffle=True):
-    root = path
-    macs_data = MacDataset(root_dir=root, csv_file=root + '\\' + 'labels.csv')
-
-    dataloader = DataLoader(macs_data, batch_size=4,
-                            shuffle=True, num_workers=0)
-    return dataloader
