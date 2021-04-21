@@ -8,11 +8,12 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, 32, 3)
+        self.conv1 = nn.Conv2d(2, 32, 3)
         self.conv2 = nn.Conv2d(32, 64, 3)
         self.conv3 = nn.Conv2d(64, 128, 3)
-
-        self.fc1 = nn.Linear(128 * 96 * 96, 256)  # 6*6 from image dimension
+        
+        size_post_pool = int((96 / 2 / 2 / 2) - 2)
+        self.fc1 = nn.Linear(128 * size_post_pool * size_post_pool, 256)
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 256)
         self.fc4 = nn.Linear(256, 1)
