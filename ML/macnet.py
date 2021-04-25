@@ -17,15 +17,18 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 256)
         self.fc4 = nn.Linear(256, 1)
+        self.dropout = nn.Dropout(p=0.2)
 
     def forward(self, x):
         # Max pooling over a (2, 2) window
         x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
         x = F.max_pool2d(F.relu(self.conv2(x)), (2, 2))
-        x = F.max_pool2d(F.relu(self.conv3(x)), (2, 2))        
+        x = F.max_pool2d(F.relu(self.conv3(x)), (2, 2))   
         x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = F.relu(self.fc2(x))
+        x = self.dropout(x)
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
         return x
