@@ -38,8 +38,8 @@ def main(raw_args=None):
 
     print("\nApplying selection criteria")
     criterion = []
-    criterion.append(raw_data['cd80_measure'] > 50) 
-    criterion.append(raw_data['cd80_measure'] < 10)
+    criterion.append(raw_data['cd80_measure'] > 60) 
+    criterion.append(raw_data['cd80_measure'] < 15)
 
     data_selections = []
     for i, criteria in enumerate(criterion):
@@ -57,7 +57,8 @@ def main(raw_args=None):
             
     with open(args.o + '\\labels.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', 
-                           quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                           quotechar='|', quoting=csv.QUOTE_MINIMAL) 
+        writer.writerow(["bf_path", "mito_path", "label"])
         for row in processed.itertuples(index=False):
             
             in_bf    = args.path + "\\" + row[0]
