@@ -38,13 +38,14 @@ def main(raw_args=None):
 
     print("\nApplying selection criteria")
     criterion = []
-    criterion.append(raw_data['cd80_measure'] > 60) 
-    criterion.append(raw_data['cd80_measure'] < 15)
+    criterion.append(raw_data['cd206_measure'] > 50) 
+    criterion.append(raw_data['cd206_measure'] < 5)
 
     data_selections = []
     for i, criteria in enumerate(criterion):
         selected = raw_data.loc[criteria][["bf_path", "mito_path"]]
         selected["label"] = i
+        print("label:", i, "# samples:", len(selected))
         data_selections.append(selected)
     
     processed = pd.concat(data_selections)
