@@ -68,8 +68,6 @@ def main(raw_args=None):
 
             # Compute prediction error
             pred = model(X.float())
-            #print(torch.unsqueeze(y, 1).float())
-            #print(pred)
             loss = loss_fn(pred, torch.unsqueeze(y, 1).float())
 
             # Backpropagation
