@@ -1,12 +1,22 @@
 from argparse import ArgumentParser as arg_parser
-from dataset_gen import MacDataset
+from MacDataset import MacDataset
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchvision import datasets
 from torchvision.transforms import ToTensor, Lambda, Compose
 import macnet
 import matplotlib.pyplot as plt
+import numpy as np
+def equal_classes_sampler(df):
+
+    class_count = np.array((df["label"].value_counts()))
+    weight = 1. / class_count
+    labels = list(df['label'])
+    weights = np.array([weight[label] for label in labels])
+    samples_weight = torch.from_numpy(weights).double()
+    sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
+    return sampler
 
 def main(raw_args=None):
     parser = arg_parser(description="Train CNN from dataset")
@@ -23,21 +33,24 @@ def main(raw_args=None):
     # Create data loaders.
     csv_path = args.path + '\\' + 'labels.csv' 
     macs_data = MacDataset(root_dir=args.path, csv_file=csv_path)
-    dataloader = DataLoader(macs_data, batch_size=args.b,
-                            shuffle=True, num_workers=0)    
-    dataloader_test = DataLoader(macs_data, batch_size=args.b,
-                            shuffle=True, num_workers=0)    
 
+    sampler = equal_classes_sampler(macs_data.macs_frame)
+
+    
+    dataloader = DataLoader(macs_data, batch_size=args.b, sampler=sampler,
+                            shuffle=False, num_workers=0)    
+    dataloader_test = DataLoader(macs_data, batch_size=args.b, sampler=sampler,
+                            shuffle=False, num_workers=0)    
     for data in dataloader:
         print("\nShape of X [N, C, H, W]: ", data["image"].shape)
         print("Shape of y: ", data["label"].shape, data["label"].dtype)
-        break
+        break                            
     
     # Get cpu or gpu device for training.
-    #device = "cuda" if torch.cuda.is_available() else "cpu"
-    device = "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    #device = "cpu"
     print("\nUsing {} device".format(device))
-
+    
     model = macnet.Net().to(device)
     print("\nConvolutional Neural Net Model:")
     print(model)
