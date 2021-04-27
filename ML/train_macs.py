@@ -79,7 +79,7 @@ def main(raw_args=None):
 
             if batch % 25 == 0:
                 loss, current = loss.item(), batch * len(X)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]", end="\r")
     
     def test(dataloader, model):
         size = len(dataloader.dataset)
