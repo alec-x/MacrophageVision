@@ -58,10 +58,8 @@ def main(raw_args=None):
                         help="Source path for dir containing raw images.")
     parser.add_argument("-o", action="store", type=str, \
                         help="out path of dataset (default=current dir")
-    parser.add_argument("-i", dest="n", action="store_true")
-
     # Default optional args
-    parser.set_defaults(o=".\\default_thresholded", p=False, i=False)
+    parser.set_defaults(o=".\\default_thresholded", p=False)
     
     args = parser.parse_args(raw_args)
     start_time = time.time()
