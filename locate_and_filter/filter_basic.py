@@ -77,7 +77,7 @@ def main(raw_args=None):
     # Default optional args
     parser.set_defaults(s=96, o=".\\default_filtered", p=False, i=False, b=False)
     
-    args = parser.parse_args()
+    args = parser.parse_args(raw_args)
     
     print("filtering dataset with params...") 
     print("Image size: " + str(args.s) + "px")
