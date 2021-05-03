@@ -20,11 +20,13 @@ import cv2
 
 # Do definitions of validity in function for now. Move to config file later
 def sample_valid(sample, box_size, failures, invalids):
-    img_bf = np.copy(sample[0])
-    img_mito = np.copy(sample[1])
     
+    img_mito = np.copy(sample[1])
+    """
+    img_bf = np.copy(sample[0])
     img_cd80 = np.copy(sample[2])
     img_cd206 = np.copy(sample[3])
+    """
     min_size = 30
     
     mask_mito = binarize_otsu(img_mito, min_size)
@@ -63,15 +65,12 @@ def sample_valid(sample, box_size, failures, invalids):
     return True 
     
 def main(raw_args=None):
-    parser = arg_parser(description="Create dataset from cell images in dir. \
-        \n Input requires a directory with images under directories with \
-        corresponding cell name")
+    parser = arg_parser(description="Basic filtering to remove invalid cell \
+                        samples")
     parser.add_argument("path", action="store", type=str, \
                         help="Source path for dir containing raw images.")
-    parser.add_argument("-s", action="store", type=int, \
-                        help="size of training image in px (default=96")
     parser.add_argument("-o", action="store", type=str, \
-                        help="out path of dataset (default=current dir")
+                        help="out path of dataset")
     parser.add_argument("-i", dest="i", action="store_true", \
                         help="output invalid samples instead of valid samples")
 

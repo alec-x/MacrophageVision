@@ -106,15 +106,15 @@ def process_cells_worker(path, box_size):
 
 def main(raw_args=None):
     parser = arg_parser(description="Create pickle of candidate cells from cell images in dir. \
-        \n Input requires a directory with images under directories with corresponding cell name")
+        \n Input requires a directory with images under directory")
     parser.add_argument("path", action="store", type=str, \
                         help="Source path for dir containing raw images.")
     parser.add_argument("-s", action="store", type=int, \
-                        help="size of training image in px (default=96")
+                        help="size of training image in px")
     parser.add_argument("-o", action="store", type=str, \
-                        help="out path of dataset (default=current dir")
+                        help="out path of dataset")
     parser.add_argument("-t", action="store", type=int, \
-                        help="num threads (default 8)")
+                        help="num threads")
     parser.set_defaults(s=96, o=".\\default_located", t=8)
     args = parser.parse_args(raw_args)
 
@@ -129,7 +129,7 @@ def main(raw_args=None):
     # Get a list of image paths of cells with labels
     print("\nLocating all images in directory")
     start_time = time.time()
-    paths, labels = get_all_files(args.path, 'tif')
+    paths, _ = get_all_files(args.path, 'tif')
 
     # Create dict of lists to hold each label type
     unfiltered_samples = []
@@ -159,9 +159,9 @@ def main(raw_args=None):
                 num_imgs += 1
     print("\n")
 
-    print("Saving at: " + path_full)
+    print("Saving at: " + args.path)
     unfiltered_samples = np.stack(unfiltered_samples, axis=0)
-    pickle.dump(unfiltered_samples, open(path_full, "wb" ))
+    pickle.dump(unfiltered_samples, open(args.path, "wb" ))
 
     elapsed = time.time() - start_time
     print("\nTotal time: " + str(elapsed))

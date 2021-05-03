@@ -53,9 +53,7 @@ def threshold(sample, box_size, min_size=30):
     return True 
     
 def main(raw_args=None):
-    parser = arg_parser(description="Create dataset from cell images in dir. \
-        \n Input requires a directory with images under directories with \
-        corresponding cell name")
+    parser = arg_parser(description="Threshold each fluorescent channel to derive classes")
     parser.add_argument("path", action="store", type=str, \
                         help="Source path for dir containing raw images.")
     parser.add_argument("-o", action="store", type=str, \
