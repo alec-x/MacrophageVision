@@ -159,9 +159,9 @@ def main(raw_args=None):
                 num_imgs += 1
     print("\n")
 
-    print("Saving at: " + args.path)
+    print("Saving at: " + args.o)
     unfiltered_samples = np.stack(unfiltered_samples, axis=0)
-    pickle.dump(unfiltered_samples, open(args.path, "wb" ))
+    pickle.dump(unfiltered_samples, open(args.o, "wb" ))
 
     elapsed = time.time() - start_time
     print("\nTotal time: " + str(elapsed))
