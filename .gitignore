@@ -3,6 +3,7 @@ __pycache__/
 .vscode/
 *.pickle
 build/
+ML/runs/
 *.pyc
 *.csv
 data/
