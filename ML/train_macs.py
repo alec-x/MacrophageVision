@@ -48,7 +48,7 @@ def main(raw_args=None):
     
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    #device = "cpu"
+    device = "cpu"
     print("\nUsing {} device".format(device))
     
     model = macnet.Net().to(device)
@@ -81,8 +81,8 @@ def main(raw_args=None):
                 
                 num_samples_correct += (torch.squeeze(pred).round() == y).type(torch.float).sum().item()
                 num_samples_done += args.b
-                training_acc = num_samples_correct/num_samples_done * 100
-                print(f"loss: {loss:>7f}  acc:"+ str(training_acc) + f"[{current:>5d}/{size:>5d}]", end="\r")
+                training_acc = num_samples_correct/num_samples_done
+                print(f"loss: {loss:>7f}  acc: {training_acc:>.2%} [{current:>5d}/{size:>5d}]", end="\r")
 
         print()
     def test(dataloader, model):
@@ -97,11 +97,12 @@ def main(raw_args=None):
                 correct += (torch.squeeze(pred).round() == y).type(torch.float).sum().item()
         test_loss /= size
         correct /= size
-        print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+        print(f"\nTest Error: \nAccuracy: {correct:>0.2%}, Avg loss: {test_loss:>8f} \n")
 
-    epochs = 5
+    epochs = 100
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
+        print("\nTraining Error:")
         train(dataloader, model, loss_fn, optimizer)
         test(dataloader_test, model)
     
