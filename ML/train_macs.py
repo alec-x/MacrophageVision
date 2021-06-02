@@ -63,22 +63,28 @@ def main(raw_args=None):
     
     def train(dataloader, model, loss_fn, optimizer):
         size = len(dataloader.dataset)
+        num_samples_done = 0
+        num_samples_correct = 0
         for batch, data in enumerate(dataloader):
             X, y = data["image"].to(device), data["label"].to(device)
 
             # Compute prediction error
             pred = model(X.float())
-            loss = loss_fn(pred, torch.unsqueeze(y, 1).float())
+            loss = loss_fn(torch.squeeze(pred), y.float())
 
             # Backpropagation
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
             if batch % 25 == 0:
                 loss, current = loss.item(), batch * len(X)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]", end="\r")
-    
+                
+                num_samples_correct += (torch.squeeze(pred).round() == y).type(torch.float).sum().item()
+                num_samples_done += args.b
+                training_acc = num_samples_correct/num_samples_done * 100
+                print(f"loss: {loss:>7f}  acc:"+ str(training_acc) + f"[{current:>5d}/{size:>5d}]", end="\r")
+
+        print()
     def test(dataloader, model):
         size = len(dataloader.dataset)
         model.eval()
@@ -88,7 +94,7 @@ def main(raw_args=None):
                 X, y = data["image"].to(device), data["label"].to(device)
                 pred = model(X.float())
                 test_loss += loss_fn(pred, torch.unsqueeze(y, 1).float()).item()
-                correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                correct += (torch.squeeze(pred).round() == y).type(torch.float).sum().item()
         test_loss /= size
         correct /= size
         print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
