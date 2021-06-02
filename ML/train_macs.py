@@ -56,8 +56,8 @@ def main(raw_args=None):
     print(model)
     
     
-    loss_fn = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+    loss_fn = nn.BCELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     print("\nTraining Start")
     
