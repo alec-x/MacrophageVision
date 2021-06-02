@@ -48,7 +48,6 @@ def main(raw_args=None):
     
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    device = "cpu"
     print("\nUsing {} device".format(device))
     
     model = macnet.Net().to(device)
