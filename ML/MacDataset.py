@@ -3,6 +3,10 @@ import os
 import torch
 import pandas as pd
 from skimage import io, transform
+
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -17,7 +21,7 @@ plt.ion()   # interactive mode
 class MacDataset(Dataset):
     """Macrophage dataset."""
     # Derived from https://pytorch.org/tutorials/recipes/recipes/custom_dataset_transforms_loader.html
-    def __init__(self, csv_file, root_dir, transform=None):
+    def __init__(self, dataframe, root_dir, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -25,7 +29,7 @@ class MacDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.macs_frame = pd.read_csv(csv_file)
+        self.macs_frame = dataframe
         self.root_dir = root_dir
         self.transform = transform
 
@@ -37,16 +41,19 @@ class MacDataset(Dataset):
             idx = idx.tolist()
 
         img_name_bf = os.path.join(self.root_dir,
-                                self.macs_frame.iloc[idx, 0])
-        img_name_mito = os.path.join(self.root_dir,
-                                self.macs_frame.iloc[idx, 1])                                
-        
-        image_bf = io.imread(img_name_bf)
-        image_mito = io.imread(img_name_mito)
-        image = np.stack((image_bf, image_mito))
-        label = self.macs_frame.iloc[idx, 2]
-        sample = {'image': image, 'label': label}
-
+                                self.macs_frame["bf"].iloc[idx])
+        #img_name_mito = os.path.join(self.root_dir,
+        #                        self.macs_frame.iloc[idx, 1])                                
+        sample = None
+        try:
+            image_bf = io.imread(img_name_bf)
+            #image_mito = io.imread(img_name_mito)
+            #image = np.stack((image_bf, image_mito))
+            image = np.expand_dims(image_bf, axis=0)
+            label = self.macs_frame["label"].iloc[idx]
+            sample = {'image': image, 'label': label}
+        except:
+            print(img_name_bf)
         if self.transform:
             sample = self.transform(sample)
 
