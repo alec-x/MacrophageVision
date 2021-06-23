@@ -38,11 +38,12 @@ def sample_valid(sample, box_size, failures, invalids):
     _, num_objs = ndi.label(mask_erode, connectivity)
 
     # Check if mitochondria stain is too dim
+    """
     if np.percentile(img_mito, 99) - np.percentile(img_mito, 5) < 20:
         failures["mito_dim"] += 1
         invalids["mito_dim"].append(sample)
         return False
-            
+    """
     # Number of cells in sample using mito stain
     # After this, mask_mito should only have 0 = background 1 = mito location
     if num_objs > 1:
