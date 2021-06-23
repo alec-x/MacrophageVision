@@ -6,8 +6,8 @@ import uuid
 
 # Using parse arg to input parameters seems to interfere with lower level argparse calls
 PATH = r"D:\\bm_alveolar_sep_channel\\alveolar_macs_autofluorescent"
-CLEAR = True
-label = "alveolar"
+CLEAR = False
+label = "2"
 suffix = str(uuid.uuid4())
 
 located_path = "data\\interim\\located_" + suffix
@@ -23,7 +23,7 @@ filter_basic([located_path, "-o", filtered_path])
 print("=================================================================")
 
 
-thresholded_path = "data\\processed\\" + "alveolar_autof" # suffix 
+thresholded_path = "D:\\data\\processed\\" + "alveolar" # suffix 
 print("\nPerforming thresholding into classes")
 print("=================================================================")
 thresholding([filtered_path, label, "-o", thresholded_path])
