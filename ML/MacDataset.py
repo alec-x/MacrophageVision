@@ -40,10 +40,10 @@ class MacDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
+        #img_name_bf = os.path.join(self.root_dir,
+        #                        self.macs_frame["bf"].iloc[idx])
         img_name_bf = os.path.join(self.root_dir,
-                                self.macs_frame["bf"].iloc[idx])
-        #img_name_mito = os.path.join(self.root_dir,
-        #                        self.macs_frame.iloc[idx, 1])                                
+                                self.macs_frame["bf"].iloc[idx])                                
         sample = None
         try:
             image_bf = io.imread(img_name_bf)
@@ -56,5 +56,4 @@ class MacDataset(Dataset):
             print(img_name_bf)
         if self.transform:
             sample = self.transform(sample)
-
         return sample

@@ -7,7 +7,7 @@ class Net(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(2, 32, 3)
+        self.conv1 = nn.Conv2d(1, 32, 3)
         self.conv1a = nn.Conv2d(32, 32, 3)
         self.conv2 = nn.Conv2d(32, 64, 3)
         self.conv2a = nn.Conv2d(64, 64, 3)
