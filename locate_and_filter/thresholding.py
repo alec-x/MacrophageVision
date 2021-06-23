@@ -58,10 +58,6 @@ def main(raw_args=None):
     os.makedirs(args.o)
     for channel in img_type:
         os.makedirs(args.o + "\\" + channel)
-    os.makedirs(args.o + "\\mito")
-    os.makedirs(args.o + "\\lipid")
-    os.makedirs(args.o + "\\nuclear")
-
     
     print("\nThresholding samples")
     output = []  
