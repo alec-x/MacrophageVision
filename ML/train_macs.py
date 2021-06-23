@@ -1,14 +1,16 @@
 from argparse import ArgumentParser as arg_parser
+from os import urandom
 from MacDataset import MacDataset
 import macnet
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import statistics
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
-import torchvision
+from torchvision import transforms
 
 def equal_classes_sampler(df):
 
@@ -20,6 +22,24 @@ def equal_classes_sampler(df):
     sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
     return sampler
 
+class standardize_input(object):
+    # single channel
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        image = (image - self.mean)/self.std
+        return {'image': torch.from_numpy(image),
+                'label': label}
+
+class rotate_90_input(object):
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        num_rot = urandom.randint(0, 3)
+        image = np.rot90(image,num_rot)
+        return {'image': torch.from_numpy(image),
+                'label': label}    
 # helper function to show an image
 # (used in the `plot_classes_preds` function below)
 def matplotlib_imshow(img, one_channel=False):
@@ -51,43 +71,51 @@ def main(raw_args=None):
     csv_path = args.path + '\\' + 'labels.csv' 
     raw_data = pd.read_csv(csv_path)
     split_data = np.array_split(raw_data.sample(frac=1), args.n)
+    
+    print("Calculating mean and stdev of dataset for standardization")
+    calc_data = MacDataset(root_dir=args.path, dataframe=raw_data)
+    calc_loader = DataLoader(calc_data, batch_size=len(calc_data), num_workers=0)
+    data = next(iter(calc_loader))
+    data_mean = data["image"].float().mean().item()
+    data_std = data["image"].float().std().item()
 
+    testing_errors = []
+    training_errors = []
     for i in range(len(split_data)):
-        print("\n FOLD " + str(i) + " OF " + str(args.n))
+        print("\n FOLD " + str(i + 1) + " OF " + str(args.n))
         print("=========================================================\n")
-        
+
         train_idx = list(range(args.n))
         train_idx.remove(i)
         train_idx_start = train_idx.pop()
         train_df = split_data[train_idx_start].copy()
         for idx in train_idx:
             train_df = train_df.append(split_data[idx])
+            
+        all_transforms = transforms.Compose([standardize_input(data_mean,data_std)])
+        
+        train_data = MacDataset(root_dir=args.path, dataframe=train_df,
+                                    transform=all_transforms)
+        test_data = MacDataset(root_dir=args.path, dataframe=split_data[i],
+                                    transform=all_transforms)
 
-        train_data = MacDataset(root_dir=args.path, dataframe=train_df)
-        test_data = MacDataset(root_dir=args.path, dataframe=split_data[i])
         train_sampler = equal_classes_sampler(train_data.macs_frame)
         test_sampler = equal_classes_sampler(test_data.macs_frame)
         
         dataloader = DataLoader(train_data, batch_size=args.b, sampler=train_sampler,
-                                shuffle=False, num_workers=0)    
-        dataloader_test = DataLoader(test_data, batch_size=args.b, sampler=test_sampler,
                                 shuffle=False, num_workers=0)
-        for data in dataloader:
-            print("\nShape of X [N, C, H, W]: ", data["image"].shape)
-            print("Shape of y: ", data["label"].shape, data["label"].dtype)
-            break                            
-        
+
+        dataloader_test = DataLoader(test_data, batch_size=args.b, sampler=test_sampler,
+                                shuffle=False, num_workers=0)              
+
         # Get cpu or gpu device for training.
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        print("\nUsing {} device".format(device))
+        print("Using {} device".format(device))
         
         model = macnet.Net().to(device)
-        print("\nConvolutional Neural Net Model:")
-        print(model)
-        
-        # run log output
-        writer = SummaryWriter(args.l)
-
+        #print("\nConvolutional Neural Net Model:")
+        #print(model)
+    
         # get some random training images
         dataiter = iter(dataloader)
         data = dataiter.next()["image"]
@@ -102,6 +130,7 @@ def main(raw_args=None):
             total_done = 0
             correct = 0
             bad_batches = 0
+            final_training_acc = 0
             for batch, data in enumerate(dataloader):
                 try:
                     X, y = data["image"].to(device), data["label"].to(device)
@@ -120,11 +149,14 @@ def main(raw_args=None):
                         correct += (torch.squeeze(pred).round() == y).type(torch.float).sum().item()
                         total_done += args.b
                         training_acc = correct/total_done
+                        final_training_acc = training_acc
                         print(f"Avg. Loss: {loss:>7f}, Accuracy: {training_acc:>.2%} [{current:>5d}/{size:>5d}]", end="\r")
                 except:
                     bad_batches += 1
-            print("bad batches:" + str(bad_batches))
             print()
+            print("bad batches:" + str(bad_batches))
+            return final_training_acc
+            
 
         def test(dataloader, model):
             size = len(dataloader.dataset)
@@ -139,13 +171,28 @@ def main(raw_args=None):
             test_loss /= size
             correct /= size
             print(f"\nTest Error: \nAvg. Loss: {test_loss:>7f}, Accuracy: {correct:>0.2%}\n")
+            return correct
 
         epochs = 5
+        training_error = []
+        testing_error = []
         for t in range(epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             print("\nTraining Error:")
-            train(dataloader, model, loss_fn, optimizer)
-            test(dataloader_test, model)
-    
+            training_error.append(train(dataloader, model, loss_fn, optimizer))
+            testing_error.append(test(dataloader_test, model))
+        training_errors.append(statistics.mean(training_error))
+        testing_errors.append(statistics.mean(testing_error))
+
+        if i == len(split_data) - 1:
+            torch.save(model.state_dict(), "./model")
+
+    training_errors = [round(error, 4) for error in training_errors]
+    testing_errors = [round(error, 4) for error in testing_errors]
+    print("training errors per fold")
+    print(training_errors)
+    print("testing errors per fold")
+    print(testing_errors)
+
 if __name__=="__main__":
     main()
