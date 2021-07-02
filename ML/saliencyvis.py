@@ -1,15 +1,12 @@
 from argparse import ArgumentParser as arg_parser
 from os import urandom
-from MacDataset import MacDataset
-import macnet
+from sailency_dataset import MacDataset
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import statistics
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 def equal_classes_sampler(df):
@@ -24,22 +21,19 @@ def equal_classes_sampler(df):
 
 class standardize_input(object):
     # single channel
+    """
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
+    """
     def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        image = (image - self.mean)/self.std
+        image, label, path = sample['image'], sample['label'], sample['path']
+        mean = np.mean(image)
+        stdev = np.std(image)
+        image = (image - mean)/stdev
         return {'image': torch.from_numpy(image),
-                'label': label}
-
-class rotate_90_input(object):
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        num_rot = urandom.randint(0, 3)
-        image = np.rot90(image,num_rot)
-        return {'image': torch.from_numpy(image),
-                'label': label}    
+                'label': label,
+                'path': path}
 
 def compute_saliency_maps(X, y, model):
     """
@@ -65,24 +59,24 @@ def compute_saliency_maps(X, y, model):
     # TODO: Implement this function. Perform a forward and backward pass through #
     # the model to compute the gradient of the correct class score with respect  #
     # to each input image. You first want to compute the loss over the correct   #
-    # scores (we'll combine losses across a batch by summing), and then compute  #
+    # pred (we'll combine losses across a batch by summing), and then compute  #
     # the gradients with a backward pass.                                        #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     #forward pass
-    scores = model(X.float())
-    # print(scores.shape) # torch.Size([5, 1000]) since 5 images, 1000 classes
-    scores = (scores.gather(1, y.view(-1, 1)).squeeze())
-    # print(scores.shape) # torch.Size([5])
+    pred = model(X.float())
+    # print(pred.shape) # torch.Size([5, 1000]) since 5 images, 1000 classes
+    pred = (pred.gather(1, y.view(-1, 1)).squeeze())
+    # print(pred.shape) # torch.Size([5])
 
-    # print(scores) #tensor([24.1313, 25.1475, 38.8825, 25.4514, 30.2723], grad_fn=<SqueezeBackward0>)
+    # print(pred) #tensor([24.1313, 25.1475, 38.8825, 25.4514, 30.2723], grad_fn=<SqueezeBackward0>)
     
     #backward pass
     # https://stackoverflow.com/questions/43451125/pytorch-what-are-the-gradient-arguments
-    # print(scores.shape[0]) # 5
-    # print(torch.FloatTensor([1.0]*scores.shape[0])) # tensor([1., 1., 1., 1., 1.])
-    scores.backward(torch.FloatTensor([1.0]*scores.shape[0]))
+    # print(pred.shape[0]) # 5
+    # print(torch.FloatTensor([1.0]*pred.shape[0])) # tensor([1., 1., 1., 1., 1.])
+    pred.backward(torch.FloatTensor([1.0]*pred.shape[0]))
     
     #saliency
     saliency, _ = torch.max(X.grad.data.abs(), dim=1)
@@ -123,13 +117,9 @@ def main(raw_args=None):
     
     print("Calculating mean and stdev of dataset for standardization")
     calc_data = MacDataset(root_dir=args.path, dataframe=raw_data)
-    #calc_loader = DataLoader(calc_data, batch_size=len(calc_data), num_workers=0)
-    #data = next(iter(calc_loader))
-    data_mean = 179.49530029296875 # data["image"].float().mean().item()
-    data_std = 26.82181739807129 # data["image"].float().std().item()
     
     print("loading data")
-    all_transforms = transforms.Compose([standardize_input(data_mean,data_std)])
+    all_transforms = transforms.Compose([standardize_input()])
     
     train_data = MacDataset(root_dir=args.path, dataframe=calc_data.macs_frame,
                                 transform=all_transforms)
@@ -143,37 +133,37 @@ def main(raw_args=None):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using {} device".format(device))
     
-    model = macnet.Net()
-    model.load_state_dict(torch.load("model"))
+    model = torch.load("model")
     model.eval()
 
+    #model_base = macnet.Net()
+    #model_base.load_state_dict(torch.load("model_baseline"))
+    #model_base.eval()
+
     dataiter = iter(dataloader)
-    for i in range(20):
+    correct = 0
+    for i in range(50):
         data = dataiter.next()
-        X = data["image"]
-        y = data["label"]
+        X, y = data["image"].to(device), data["label"].to(device)
         X.requires_grad_()
-        scores = model(X.float())
-        output_max = scores[0,scores.argmax()]
+        pred = model(X.float())
+
+        output_max = pred[0,pred.argmax()]
         output_max.backward()
         saliency,_ = torch.max(X.grad.data.abs(), dim=1) 
         saliency = saliency.reshape(96,96)
         image = X.reshape(96,96)
-
-        #print(saliency.detach().numpy())
-        #print(image.detach().numpy())
         # Visualize the image and the saliency map
+        title = data["path"][0].split("\\")[4] + " pred: " + str(round(pred.item())) + " true: " + str(y.item())
         
         fig, ax = plt.subplots(1, 2)
-        ax[0].imshow(image.detach().numpy())
+        ax[0].imshow(image.cpu().detach().numpy())
         ax[0].axis('off')
-        ax[1].imshow(saliency.detach().numpy(), cmap='hot')
+        ax[1].imshow(saliency.cpu().detach().numpy(), cmap='hot')
         ax[1].axis('off')
         plt.tight_layout()
-        fig.suptitle('The Image and Its Saliency Map')
-        
-        plt.show()
-        input()
-        plt.close()
+        fig.suptitle(title)
+        plt.savefig('data\\interim\\saliency_' + str(i) + '.png')
+
 if __name__=="__main__":
     main()
