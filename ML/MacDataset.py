@@ -2,15 +2,14 @@ from __future__ import print_function, division
 import os
 import torch
 import pandas as pd
-from skimage import io, transform
+from skimage import io
 
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import numpy as np
 import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torch.utils.data import Dataset
 
 # Ignore warnings
 import warnings
@@ -40,20 +39,19 @@ class MacDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        #img_name_bf = os.path.join(self.root_dir,
-        #                        self.macs_frame["bf"].iloc[idx])
-        img_name_bf = os.path.join(self.root_dir,
-                                self.macs_frame["bf"].iloc[idx])                                
+        img_name_green = os.path.join(self.root_dir,
+                                self.macs_frame["green"].iloc[idx])                                
         sample = None
         try:
-            image_bf = io.imread(img_name_bf)
+            image_green = io.imread(img_name_green)
             #image_mito = io.imread(img_name_mito)
-            #image = np.stack((image_bf, image_mito))
-            image = np.expand_dims(image_bf, axis=0)
+            #image = np.stack((image_green, image_mito))
+            image = np.expand_dims(image_green, axis=0)
             label = self.macs_frame["label"].iloc[idx]
             sample = {'image': image, 'label': label}
-        except:
-            print(img_name_bf)
+        except Exception as e:
+            print(img_name_green)
+            print(e)
         if self.transform:
             sample = self.transform(sample)
         return sample

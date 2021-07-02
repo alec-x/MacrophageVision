@@ -1,6 +1,6 @@
 from argparse import ArgumentParser as arg_parser
-from os import urandom
-from MacDataset import MacDataset
+import random
+from macdataset import MacDataset
 import macnet
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +11,8 @@ from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
+import torch.nn.functional as F
+from torchvision.transforms import functional
 
 def equal_classes_sampler(df):
 
@@ -21,36 +23,52 @@ def equal_classes_sampler(df):
     samples_weight = torch.from_numpy(weights).double()
     sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
     return sampler
+def visualize_samples(dataloader):
+    dataiter = iter(dataloader)
+    data = dataiter.next()
+    X = data["image"][0][0]
+    plt.imshow(X)
+    plt.show()
+    input()
 
 class standardize_input(object):
     # single channel
+    """
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
+    """
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-        image = (image - self.mean)/self.std
+        mean = np.mean(image)
+        stdev = np.std(image)
+        image = (image - mean)/stdev
         return {'image': torch.from_numpy(image),
                 'label': label}
 
 class rotate_90_input(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-        num_rot = urandom.randint(0, 3)
-        image = np.rot90(image,num_rot)
-        return {'image': torch.from_numpy(image),
+        num_rot = random.randint(0, 3)
+        image = torch.rot90(image,num_rot, [1,2])
+        return {'image': image,
                 'label': label}    
-# helper function to show an image
-# (used in the `plot_classes_preds` function below)
-def matplotlib_imshow(img, one_channel=False):
-    if one_channel:
-        img = img.mean(dim=0)
-    img = img / 2 + 0.5     # unnormalize
-    npimg = img.numpy()
-    if one_channel:
-        plt.imshow(npimg, cmap="Greys")
-    else:
-        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
+
+class center_crop(object):
+    def __init__(self, size_range):
+        self.range = size_range
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        orig = image.shape[2]
+        crop_size = random.randint(int(self.range[0]/2), int(self.range[1]/2))*2
+        p_size = int((orig - crop_size) / 2)
+        image = functional.center_crop(image, crop_size)
+        image = F.pad(input=image, pad=(p_size, p_size, p_size, p_size), mode='constant', value=0)
+        return {'image': image,
+                'label': label}
 
 def main(raw_args=None):
     parser = arg_parser(description="Train CNN from dataset")
@@ -73,12 +91,13 @@ def main(raw_args=None):
     split_data = np.array_split(raw_data.sample(frac=1), args.n)
     
     print("Calculating mean and stdev of dataset for standardization")
-    calc_data = MacDataset(root_dir=args.path, dataframe=raw_data)
-    calc_loader = DataLoader(calc_data, batch_size=len(calc_data), num_workers=0)
-    data = next(iter(calc_loader))
-    data_mean = data["image"].float().mean().item()
-    data_std = data["image"].float().std().item()
-
+    #calc_data = MacDataset(root_dir=args.path, dataframe=raw_data)
+    #calc_loader = DataLoader(calc_data, batch_size=len(calc_data), num_workers=0)
+    #data = next(iter(calc_loader))
+    #data_mean = data["image"].float().mean().item()
+    #data_std = data["image"].float().std().item()
+    #data_mean = 179.49530029296875 
+    #data_std = 26.82181739807129 
     testing_errors = []
     training_errors = []
     for i in range(len(split_data)):
@@ -91,13 +110,19 @@ def main(raw_args=None):
         train_df = split_data[train_idx_start].copy()
         for idx in train_idx:
             train_df = train_df.append(split_data[idx])
-            
-        all_transforms = transforms.Compose([standardize_input(data_mean,data_std)])
         
+        train_transforms = transforms.Compose([
+            standardize_input(),
+            rotate_90_input()
+            ])
+        test_transforms = transforms.Compose([
+            standardize_input()
+            ])
+
         train_data = MacDataset(root_dir=args.path, dataframe=train_df,
-                                    transform=all_transforms)
+                                    transform=train_transforms)
         test_data = MacDataset(root_dir=args.path, dataframe=split_data[i],
-                                    transform=all_transforms)
+                                    transform=test_transforms)
 
         train_sampler = equal_classes_sampler(train_data.macs_frame)
         test_sampler = equal_classes_sampler(test_data.macs_frame)
@@ -115,10 +140,6 @@ def main(raw_args=None):
         model = macnet.Net().to(device)
         #print("\nConvolutional Neural Net Model:")
         #print(model)
-    
-        # get some random training images
-        dataiter = iter(dataloader)
-        data = dataiter.next()["image"]
 
         loss_fn = nn.BCELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
@@ -131,6 +152,7 @@ def main(raw_args=None):
             correct = 0
             bad_batches = 0
             final_training_acc = 0
+            
             for batch, data in enumerate(dataloader):
                 try:
                     X, y = data["image"].to(device), data["label"].to(device)
@@ -140,12 +162,14 @@ def main(raw_args=None):
                     loss = loss_fn(torch.squeeze(pred), y.float())
 
                     # Backpropagation
+                    model.train()
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
                     if batch % 25 == 0:
                         loss, current = loss.item(), batch * len(X)
-                        
+                        #print(torch.squeeze(pred).round(), y)
+                        #input()
                         correct += (torch.squeeze(pred).round() == y).type(torch.float).sum().item()
                         total_done += args.b
                         training_acc = correct/total_done
@@ -178,14 +202,15 @@ def main(raw_args=None):
         testing_error = []
         for t in range(epochs):
             print(f"Epoch {t+1}\n-------------------------------")
+
             print("\nTraining Error:")
             training_error.append(train(dataloader, model, loss_fn, optimizer))
             testing_error.append(test(dataloader_test, model))
         training_errors.append(statistics.mean(training_error))
         testing_errors.append(statistics.mean(testing_error))
 
-        if i == len(split_data) - 1:
-            torch.save(model.state_dict(), "./model")
+        if i == 0:
+            torch.save(model, "./model")
 
     training_errors = [round(error, 4) for error in training_errors]
     testing_errors = [round(error, 4) for error in testing_errors]
