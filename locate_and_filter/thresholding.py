@@ -51,7 +51,9 @@ def main(raw_args=None):
     # BM Macs: ["lipid", "nuclear", "mito", "bf"] 
     # Alveolar autof: ["green", "red", "blue", "bf"]   
     channel_order = ["green", "red", "blue", "bf"]
-    
+    for i in range(num_samples):
+        arr_data[i, :] = presamples[i]
+        
     print("\nSaving to pickle")
     data = {}
     data["labels"] = arr_labels
