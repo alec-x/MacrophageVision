@@ -20,7 +20,7 @@ plt.ion()   # interactive mode
 class MacDataset(Dataset):
     """Macrophage dataset."""
     # Derived from https://pytorch.org/tutorials/recipes/recipes/custom_dataset_transforms_loader.html
-    def __init__(self, dataframe, root_dir, transform=None):
+    def __init__(self, images, labels, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -28,29 +28,23 @@ class MacDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.macs_frame = dataframe
-        self.root_dir = root_dir
+        self.images = images
+        self.labels = labels
         self.transform = transform
 
     def __len__(self):
-        return len(self.macs_frame)
-
+        return self.labels.shape[0]
+    def __order__(self):
+        return self.order
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-
-        img_name_green = os.path.join(self.root_dir,
-                                self.macs_frame["green"].iloc[idx])                                
-        sample = None
         try:
-            image_green = io.imread(img_name_green)
-            #image_mito = io.imread(img_name_mito)
-            #image = np.stack((image_green, image_mito))
-            image = np.expand_dims(image_green, axis=0)
-            label = self.macs_frame["label"].iloc[idx]
-            sample = {'image': image, 'label': label}
+            image = self.images[idx]
+            label = self.labels[idx]
+            sample = [image, label]
         except Exception as e:
-            print(img_name_green)
+            print("sample: " + str(idx) + " did not load")
             print(e)
         if self.transform:
             sample = self.transform(sample)
