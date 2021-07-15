@@ -139,6 +139,8 @@ class Display(tk.Frame):
         canv.create_image((0,0), image=canv.image, anchor="nw")
         ratio_vert = disp_width / real_width
         ratio_horz = disp_height / real_height
+        print(disp_width, disp_height)
+        print(real_width, real_height)
         self.horz_ratio.set(ratio_horz)
         self.vert_ratio.set(ratio_vert)
 
@@ -189,6 +191,26 @@ class MainApplication(tk.Frame):
         _num_samples += + 1
         self.num_samples.set(str(_num_samples))
 
+    def remove_from_stack(self, certain_stack, uncertain_stack):
+        x, y = self.display.can.x, self.display.can.y
+        def in_dist(ele, x, y):
+            x_dif = abs(x - ele[0])
+            y_dif = abs(y - ele[1])
+            horz_mu = IMAGE_SIZE * self.display.horz_ratio.get() / 2
+            vert_mu = IMAGE_SIZE * self.display.vert_ratio.get() / 2
+            if y_dif <= horz_mu and x_dif <= vert_mu:
+                return True
+            return False
+        
+        page = int(self.curr_page.get())
+        certain_stack[page] = [ele for ele in certain_stack[page] if not in_dist(ele,x,y)]
+        uncertain_stack[page] = [ele for ele in uncertain_stack[page] if not in_dist(ele,x,y)]
+        self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
+        
+        count_certain = sum([len(listElem) for listElem in certain_stack])
+        count_uncertain = sum([len(listElem) for listElem in uncertain_stack])
+        self.num_samples.set(str(count_certain + count_uncertain))
+
     def update_num_samples(self, num):
         self.num_samples.set(str(num))
 
@@ -198,7 +220,7 @@ class MainApplication(tk.Frame):
     def refresh_image(self, page, layer):
         self.curr_layer.set(str(layer))
         self.display.render_image(self.image_stack[page][layer])
-        self.display.draw_markers(self.certain_stack[page])
+        self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
         
     def initialize_image(self, path):
         self.certain_stack.clear()
@@ -245,11 +267,11 @@ class MainApplication(tk.Frame):
         self.pagebar.right_btn.bind("<ButtonPress-1>", lambda event: self.change_page(min(len(self.image_stack) - 1, int(self.curr_page.get()) + 1)))
         self.display.can.bind('<ButtonPress-1>', lambda event: self.add_to_stack(self.certain_stack))
         self.display.can.bind('<ButtonPress-3>', lambda event: self.add_to_stack(self.uncertain_stack))
+        self.display.can.bind('<ButtonPress-2>', lambda event: self.remove_from_stack(self.certain_stack, self.uncertain_stack))
 
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Manual Cell Selection Utility")
     root.minsize(1200, 900)
-    root.maxsize(1200,900)
     MainApplication(root).pack(side="top", fill="both", expand=True)
     root.mainloop()
