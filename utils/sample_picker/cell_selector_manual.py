@@ -1,9 +1,11 @@
 # https://stackoverflow.com/questions/17466561/best-way-to-structure-a-tkinter-application
+from posixpath import basename
 import numpy as np
 from PIL import ImageTk, Image
 import tkinter as tk
 from tkinter import filedialog
-
+import pickle
+import ntpath
 
 XPAD = 8
 YPAD = 4
@@ -39,21 +41,23 @@ class SaveBar(tk.Frame):
             print("Selected directory: " + path)
             return 0
         else:
+    
             return 1
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
        
-        out_path_lbl = tk.Label(self, text="Save dir:      ")
-        out_path_txt = tk.Entry(self, textvariable=parent.out_path)
-        save_btn = tk.Button(self, text="Save", width=20)
+        self.out_path_lbl = tk.Label(self, text="Save dir:      ")
+        self.out_path_txt = tk.Entry(self, textvariable=parent.out_path)
+        self.save_btn = tk.Button(self, text="Save", width=20)
         
-        out_path_lbl.pack(side="left", padx=XPAD, pady=YPAD)
-        out_path_txt.pack(side="left", fill="x", expand=True, padx=XPAD, pady=YPAD)
-        save_btn.pack(side="left", padx=XPAD, pady=YPAD)
+        self.out_path_lbl.pack(side="left", padx=XPAD, pady=YPAD)
+        self.out_path_txt.pack(side="left", fill="x", expand=True, padx=XPAD, pady=YPAD)
+        self.save_btn.pack(side="left", padx=XPAD, pady=YPAD)
 
-        out_path_txt.bind("<ButtonPress-1>", lambda event: self.__browse_folder(out_path_txt))
+        self.out_path_txt.bind("<ButtonPress-1>", lambda event: self.__browse_folder(self.out_path_txt))
+        
 
 class LayerBar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -139,8 +143,6 @@ class Display(tk.Frame):
         canv.create_image((0,0), image=canv.image, anchor="nw")
         ratio_vert = disp_width / real_width
         ratio_horz = disp_height / real_height
-        print(disp_width, disp_height)
-        print(real_width, real_height)
         self.horz_ratio.set(ratio_horz)
         self.vert_ratio.set(ratio_vert)
 
@@ -177,8 +179,42 @@ class PageBar(tk.Frame):
         
 
 class MainApplication(tk.Frame):
+    def save_stacks(self, certain_stack, uncertain_stack, image_stack, horz_ratio, vert_ratio):
+        out_snippets_certain = []
+        out_snippets_uncertain = []
+
+        for page in range(len(certain_stack)):
+            for location in certain_stack[page]:
+                x = location[0]/vert_ratio
+                y = location[1]/horz_ratio
+                x1 = int(x - IMAGE_SIZE/2)
+                x2 = int(x + IMAGE_SIZE/2)
+                y1 = int(y - IMAGE_SIZE/2)
+                y2 = int(y + IMAGE_SIZE/2)
+                curr_stack = [image_stack[page][chan][y1:y2, x1:x2] for chan in range(len(image_stack[page]))]
+                out_snippets_certain.append(curr_stack)    
+
+        for page in range(len(uncertain_stack)):
+            for location in uncertain_stack[page]:
+                x = location[0]/vert_ratio
+                y = location[1]/horz_ratio
+                x1 = int(x - IMAGE_SIZE/2)
+                x2 = int(x + IMAGE_SIZE/2)
+                y1 = int(y - IMAGE_SIZE/2)
+                y2 = int(y + IMAGE_SIZE/2)       
+                curr_stack = [image_stack[page][chan][y1:y2, x1:x2] for chan in range(len(image_stack[page]))]
+                out_snippets_uncertain.append(curr_stack)    
+        
+        base_name = ntpath.basename(self.in_path.get())
+        out_certain = self.out_path.get() + "\\" + base_name + "_certain.pickle"
+        out_uncertain = self.out_path.get() + "\\" + base_name + "_uncertain.pickle"
+        pickle.dump(out_snippets_certain, open(out_certain, "wb" ))
+        pickle.dump(out_snippets_uncertain, open(out_uncertain, "wb" ))
+
     def add_to_stack(self, stack):
         x, y = self.display.can.x, self.display.can.y
+        x = min(max(IMAGE_SIZE*self.display.vert_ratio.get()/2, x), self.display.can.winfo_width())
+        y = min(max(IMAGE_SIZE*self.display.horz_ratio.get()/2, y), self.display.can.winfo_height())
         page = int(self.curr_page.get())
         stack[page].append((x,y))
         self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
@@ -268,7 +304,8 @@ class MainApplication(tk.Frame):
         self.display.can.bind('<ButtonPress-1>', lambda event: self.add_to_stack(self.certain_stack))
         self.display.can.bind('<ButtonPress-3>', lambda event: self.add_to_stack(self.uncertain_stack))
         self.display.can.bind('<ButtonPress-2>', lambda event: self.remove_from_stack(self.certain_stack, self.uncertain_stack))
-
+        self.savebar.save_btn.bind("<ButtonPress-1>", lambda event: self.save_stacks(self.certain_stack, self.uncertain_stack, self.image_stack, 
+                                                                             self.display.horz_ratio.get(), self.display.vert_ratio.get()))
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Manual Cell Selection Utility")
