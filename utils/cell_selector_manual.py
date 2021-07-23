@@ -17,9 +17,12 @@ class PathBar(tk.Frame):
             textbox.delete(0, "end")
             textbox.insert(0,path)
             print("Selected path: " + path)
+            self.parent.display.can.focus_set()
             return 0
         else:
+            self.parent.display.can.focus_set()
             return 1
+        
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
@@ -130,6 +133,7 @@ class Display(tk.Frame):
         stack.clear()
         stack.extend(imagestack)
         self.render_image(stack[0][0])
+        self.parent.display.can.focus_set()
 
     def render_image(self, img):
         canv = self.can
@@ -167,8 +171,10 @@ class PageBar(tk.Frame):
         self.page_num_lbl = tk.Label(self, textvariable=parent.curr_page)
         self.left_btn = tk.Button(self, text="<-", width=10)
         self.right_btn = tk.Button(self, text="->", width=10)
-        self.samples_lbl = tk.Label(self, text="# Samples:")
-        self.samples_num_lbl = tk.Label(self, textvariable=parent.num_samples)
+        self.samples_lbl = tk.Label(self, text="# Samples Certain:")
+        self.samples_num_lbl = tk.Label(self, textvariable=parent.num_samples_certain)
+        self.samples_lbl_2 = tk.Label(self, text="# Samples Uncertain:")
+        self.samples_num_lbl_2 = tk.Label(self, textvariable=parent.num_samples_uncertain)
         
         self.left_btn.pack(side="left", padx=XPAD, pady=YPAD)
         self.page_lbl.pack(side="left", padx=XPAD, pady=YPAD)
@@ -176,6 +182,8 @@ class PageBar(tk.Frame):
         self.right_btn.pack(side="left", padx=XPAD, pady=YPAD)
         self.samples_num_lbl.pack(side="right", padx=XPAD, pady=YPAD)
         self.samples_lbl.pack(side="right", padx=XPAD, pady=YPAD)
+        self.samples_num_lbl_2.pack(side="right", padx=XPAD, pady=YPAD)
+        self.samples_lbl_2.pack(side="right", padx=XPAD, pady=YPAD)        
         
 
 class MainApplication(tk.Frame):
@@ -209,8 +217,10 @@ class MainApplication(tk.Frame):
         out_certain = self.out_path.get() + "\\" + base_name + "_certain.pickle"
         out_uncertain = self.out_path.get() + "\\" + base_name + "_uncertain.pickle"
         pickle.dump(out_snippets_certain, open(out_certain, "wb" ))
+        print("saved uncertain snippets to: " + out_uncertain)
         pickle.dump(out_snippets_uncertain, open(out_uncertain, "wb" ))
-
+        print("saved certain snippets to: " + out_certain)
+        
     def add_to_stack(self, stack):
         x, y = self.display.can.x, self.display.can.y
         x = min(max(IMAGE_SIZE*self.display.vert_ratio.get()/2, x), self.display.can.winfo_width())
@@ -218,16 +228,14 @@ class MainApplication(tk.Frame):
         page = int(self.curr_page.get())
         stack[page].append((x,y))
         self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
-        _num_samples = self.num_samples.get()
-        if _num_samples == '':
-            _num_samples = 0
-        else: 
-            _num_samples = int(_num_samples)
 
-        _num_samples += + 1
-        self.num_samples.set(str(_num_samples))
+        count_certain = sum([len(listElem) for listElem in self.certain_stack])
+        count_uncertain = sum([len(listElem) for listElem in self.uncertain_stack])
+        self.num_samples_certain.set(str(count_certain))
+        self.num_samples_uncertain.set(str(count_uncertain))
+        self.display.can.focus_set()
 
-    def remove_from_stack(self, certain_stack, uncertain_stack):
+    def remove_from_stack(self):
         x, y = self.display.can.x, self.display.can.y
         def in_dist(ele, x, y):
             x_dif = abs(x - ele[0])
@@ -239,19 +247,24 @@ class MainApplication(tk.Frame):
             return False
         
         page = int(self.curr_page.get())
-        certain_stack[page] = [ele for ele in certain_stack[page] if not in_dist(ele,x,y)]
-        uncertain_stack[page] = [ele for ele in uncertain_stack[page] if not in_dist(ele,x,y)]
+        self.certain_stack[page] = [ele for ele in self.certain_stack[page] if not in_dist(ele,x,y)]
+        self.uncertain_stack[page] = [ele for ele in self.uncertain_stack[page] if not in_dist(ele,x,y)]
         self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
         
-        count_certain = sum([len(listElem) for listElem in certain_stack])
-        count_uncertain = sum([len(listElem) for listElem in uncertain_stack])
-        self.num_samples.set(str(count_certain + count_uncertain))
+        count_certain = sum([len(listElem) for listElem in self.certain_stack])
+        count_uncertain = sum([len(listElem) for listElem in self.uncertain_stack])
+        self.num_samples_certain.set(str(count_certain))
+        self.num_samples_uncertain.set(str(count_uncertain))
+        self.display.can.focus_set()
 
     def update_num_samples(self, num):
-        self.num_samples.set(str(num))
+        self.num_samples_certain.set(str(num))
 
     def change_page(self, page):
         self.curr_page.set(str(page))
+
+    def change_layer(self, layer):
+        self.curr_layer.set(str(layer))
 
     def refresh_image(self, page, layer):
         self.curr_layer.set(str(layer))
@@ -264,17 +277,21 @@ class MainApplication(tk.Frame):
         self.display.load_img(path, self.image_stack)
         self.curr_page.set("0")
         self.curr_layer.set("0")
+        self.num_samples_certain.set("0")
+        self.num_samples_uncertain.set("0")
         num_images = len(self.image_stack)
         self.certain_stack = [[] for _ in range(num_images)]
         self.uncertain_stack = [[] for _ in range(num_images)]
-
+        self.display.can.focus_set()
+        
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.in_path = tk.StringVar(self)
         self.out_path = tk.StringVar(self)
         self.curr_layer = tk.StringVar(self)
         self.curr_page = tk.StringVar(self)
-        self.num_samples = tk.StringVar(self)
+        self.num_samples_certain = tk.StringVar(self)
+        self.num_samples_uncertain = tk.StringVar(self)
 
 
         self.layer = [0, 1, 2, 3]
@@ -300,12 +317,22 @@ class MainApplication(tk.Frame):
         self.curr_layer.trace_add("write", lambda name, index, mode: self.refresh_image(int(self.curr_page.get()), int(self.curr_layer.get())))
         self.curr_page.trace_add("write", lambda name, index, mode: self.refresh_image(int(self.curr_page.get()), int(self.curr_layer.get())))
         self.pagebar.left_btn.bind("<ButtonPress-1>", lambda event: self.change_page(max(0, int(self.curr_page.get()) - 1)))
+        self.display.can.bind("q", lambda event: self.change_page(max(0, int(self.curr_page.get()) - 1)))
         self.pagebar.right_btn.bind("<ButtonPress-1>", lambda event: self.change_page(min(len(self.image_stack) - 1, int(self.curr_page.get()) + 1)))
+        self.display.can.bind("e", lambda event: self.change_page(min(len(self.image_stack) - 1, int(self.curr_page.get()) + 1)))         
         self.display.can.bind('<ButtonPress-1>', lambda event: self.add_to_stack(self.certain_stack))
+        self.display.can.bind('a', lambda event: self.add_to_stack(self.certain_stack))
         self.display.can.bind('<ButtonPress-3>', lambda event: self.add_to_stack(self.uncertain_stack))
-        self.display.can.bind('<ButtonPress-2>', lambda event: self.remove_from_stack(self.certain_stack, self.uncertain_stack))
+        self.display.can.bind('s', lambda event: self.add_to_stack(self.uncertain_stack))
+        self.display.can.bind('<ButtonPress-2>', lambda event: self.remove_from_stack())
+        self.display.can.bind('d', lambda event: self.remove_from_stack())
         self.savebar.save_btn.bind("<ButtonPress-1>", lambda event: self.save_stacks(self.certain_stack, self.uncertain_stack, self.image_stack, 
                                                                              self.display.horz_ratio.get(), self.display.vert_ratio.get()))
+        self.display.can.bind("1", lambda event: self.change_layer("0"))
+        self.display.can.bind("2", lambda event: self.change_layer("1"))
+        self.display.can.bind("3", lambda event: self.change_layer("2"))
+        self.display.can.bind("4", lambda event: self.change_layer("3"))
+
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Manual Cell Selection Utility")
