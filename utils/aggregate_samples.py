@@ -54,4 +54,4 @@ for i, data in enumerate(zip(paths, agg_data)):
     output["channels"] = channel_order
     output["images"] = arr_data
     out_path = out_path_base + '\\' + data[0][0] + ".pickle"
-    pickle.dump(data, open(out_path, "wb" ))
+    pickle.dump(output, open(out_path, "wb" ))
