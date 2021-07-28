@@ -2,40 +2,46 @@ import numpy as np
 import random
 import torch
 from matplotlib import pyplot as plt
-from torchvision.transforms import functional
+from torchvision.transforms import functional as F
 from torch.utils.data import WeightedRandomSampler
+import cv2
 
 class standardize_input(object):
     # single channel
     def __call__(self, sample):
         image, label = sample[0], sample[1]
-        mean = np.mean(image)
-        stdev = np.std(image)
-        image = (image - mean)/stdev
-        return [torch.from_numpy(image), label]
+        chans = range(image.shape[0])
+        means = [np.mean(image[chan]) for chan in chans]
+        stdevs = [np.std(image[chan]) for chan in chans]
+        output = torch.Tensor(image)
+        for chan in chans:
+            output[chan] = (output[chan] - means[chan]) / stdevs[chan]
+
+        return [output, label]
                 
 class rotate_90_input(object):
     def __call__(self, sample):
         image, label = sample[0], sample[1]
         num_rot = random.randint(0, 3)
-        image = torch.rot90(image,num_rot, [1,2])
+        image = torch.rot90(image, num_rot, [1,2])
         return [image, label]
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
-        
-class center_crop(object):
-    def __init__(self, size_range):
-        self.range = size_range
+
+class gaussian_blur(object):
+    def __init__(self, kernel_size, sigma):
+        self.kernel_size = kernel_size
+        self.sigma = sigma
+    
     def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        orig = image.shape[2]
-        crop_size = random.randint(int(self.range[0]/2), int(self.range[1]/2))*2
-        p_size = int((orig - crop_size) / 2)
-        image = functional.center_crop(image, crop_size)
-        image = F.pad(input=image, pad=(p_size, p_size, p_size, p_size), mode='constant', value=0)
-        return {'image': image,
-                'label': label}
+        image, label = sample[0], sample[1]
+        ksize = (self.kernel_size, self.kernel_size)
+        chans = range(image.shape[0])
+        output = torch.Tensor(image)
+        for chan in chans:
+            output[chan] = torch.Tensor(cv2.GaussianBlur(image[chan].numpy(), ksize, self.sigma))
+        return [image, label]
 
 def visualize_samples(dataloader, num_samples):
     dataiter = iter(dataloader)
