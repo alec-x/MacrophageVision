@@ -17,7 +17,7 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(8192, 256)
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 256)
-        self.fc4 = nn.Linear(256, 1)
+        self.fc4 = nn.Linear(256, 3)
         self.dropout = nn.Dropout(p=0.2)
 
     def forward(self, x):
@@ -35,8 +35,8 @@ class Net(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.dropout(x)
         x = F.relu(self.fc3(x))
-        x = self.fc4(x)
-        return sigmoid(x)
+        return self.fc4(x)
+        #return sigmoid(x)
 
     def num_flat_features(self, x):
         size = x.size()[1:]  # all dimensions except the batch dimension
