@@ -5,7 +5,7 @@ from torch import sigmoid
 
 class Net(nn.Module):
 
-    def __init__(self):
+    def __init__(self, num_classes):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 3)
         self.conv1a = nn.Conv2d(32, 32, 3)
@@ -17,7 +17,7 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(8192, 256)
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 256)
-        self.fc4 = nn.Linear(256, 3)
+        self.fc4 = nn.Linear(256, num_classes)
         self.dropout = nn.Dropout(p=0.2)
 
     def forward(self, x):
