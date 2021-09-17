@@ -13,3 +13,4 @@ noarch/
 ML/models/
 .ipynb_checkpoints/
 ML/model
+ML/out/
