@@ -7,13 +7,11 @@ import os
 import sys
 
 def main(raw_args=None):
-    parser = arg_parser(description="Create dataset from cell images in dir. \
-        \n Input requires a directory with images under directories with \
-        corresponding cell name")
+    parser = arg_parser(description="Create dataset from cell images in pickle.")
     parser.add_argument("path", action="store", type=str, \
-                        help="Source path for dir containing pickle.")
+                        help="Source path for pickle.")
     parser.add_argument("-o", action="store", type=str, \
-                        help="out path of dataset (default=current dir")
+                        help="out path of dir (default=current dir")
 
     # Default optional args
     parser.set_defaults(o=".\\data")
@@ -26,38 +24,27 @@ def main(raw_args=None):
     with open(args.path, 'rb') as handle:
         data = pickle.load(handle)
     
+    images = data["images"]
+    channel_order = data["channels"][0]
     print("Saving at: " + args.o)
     sig_figs = math.floor(math.log10(len(data))) + 1
-
     os.makedirs(args.o)
-    os.mkdir(args.o + "\\" + "BF")
-    os.mkdir(args.o + "\\" + "mito")
-    os.mkdir(args.o + "\\" + "cd80") #M1, blue
-    os.mkdir(args.o + "\\" + "cd206") #M2, red
-    
-    i = 0
-    load_inc = int(len(data) / 100)
+    for channel in channel_order:
+        os.mkdir(args.o + "\\" + channel)
 
-    for sample in data:      
-        """
+    load_inc = int(len(images) / 100)
+
+    for i, sample in enumerate(images):
         if i % load_inc == 0:
-            print(f'Saving: {i}/{len(data)}', end="\r")
-        """
-        tmp_img = Image.fromarray(sample[0])
+            print(f'Saving: {i}/{len(images)}', end="\r")
+            
+        
         curr_name = str(i).rjust(sig_figs,'0')
-        
-        tmp_img.save(args.o + "\\BF\\" + curr_name + 'BF.png')
-        
-        tmp_img = Image.fromarray(sample[1])
-        tmp_img.save(args.o + "\\mito\\" + curr_name + 'mito.png')
-        
-        tmp_img = Image.fromarray(sample[2])
-        tmp_img.save(args.o + "\\cd80\\" + curr_name + 'cd80.png')
+        for j, chan in enumerate(channel_order):
+            tmp_img = Image.fromarray(np.array(sample[j])).convert("L")
+            tmp_img.save(args.o + "\\"+ chan +"\\" + curr_name + chan + '.png')
 
-        tmp_img = Image.fromarray(sample[3])
-        tmp_img.save(args.o + "\\cd206\\" + curr_name + 'cd206.png')
-        
-        i += 1
+    print("\n image conversion complete")
 
 if __name__=="__main__":
     main()
