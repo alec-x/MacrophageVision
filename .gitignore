@@ -14,3 +14,4 @@ ML/models/
 .ipynb_checkpoints/
 ML/model
 ML/out/
+ML/curr_run/
