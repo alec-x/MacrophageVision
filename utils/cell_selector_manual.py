@@ -82,24 +82,21 @@ class Display(tk.Frame):
         canv.delete("all")
         canv.create_image((0,0), image=canv.image, anchor="nw")
         
-        limit_x = canv.winfo_width()
-        limit_y = canv.winfo_height()
-
-        horz_ratio = IMAGE_SIZE * self.horz_ratio.get()
-        vert_ratio = IMAGE_SIZE * self.vert_ratio.get()
+        horz_ratio = self.horz_ratio.get()
+        vert_ratio = self.vert_ratio.get()
 
         for location in certain_stack:
-            x1 = max(0, location[0] - vert_ratio / 2)
-            y1 = max(0, location[1] - horz_ratio / 2)
-            x2 = min(limit_x, location[0] + vert_ratio / 2)
-            y2 = min(limit_y, location[1] + horz_ratio / 2)
+            x1 = location[0] - IMAGE_SIZE * vert_ratio / 2
+            y1 = location[1] - IMAGE_SIZE * horz_ratio / 2
+            x2 = location[0] + IMAGE_SIZE * vert_ratio / 2
+            y2 = location[1] + IMAGE_SIZE * horz_ratio / 2
             canv.create_rectangle(x1, y1, x2, y2,outline="green")
 
         for location in uncertain_stack:
-            x1 = max(0, location[0] - vert_ratio / 2)
-            y1 = max(0, location[1] - horz_ratio / 2)
-            x2 = min(limit_x, location[0] + vert_ratio / 2)
-            y2 = min(limit_y, location[1] + horz_ratio / 2)
+            x1 = location[0] - IMAGE_SIZE * vert_ratio / 2
+            y1 = location[1] - IMAGE_SIZE * horz_ratio / 2
+            x2 = location[0] + IMAGE_SIZE * vert_ratio / 2
+            y2 = location[1] + IMAGE_SIZE * horz_ratio / 2
             canv.create_rectangle(x1, y1, x2, y2,outline="orange")
             
     def load_img(self, path, stack):
