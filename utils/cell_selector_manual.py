@@ -134,9 +134,11 @@ class Display(tk.Frame):
 
     def render_image(self, img):
         canv = self.can
-        real_width, real_height = img.shape
+        real_height, real_width = img.shape
+        
         disp_width = canv.winfo_width()
         disp_height = canv.winfo_height()
+
         img =  Image.fromarray(img)
         img = img.resize((disp_width, disp_height))
         canv.delete("all")
