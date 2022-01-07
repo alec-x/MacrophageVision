@@ -46,18 +46,20 @@ print("\nSaving to pickle")
 for i, data in enumerate(zip(paths, agg_data)):
 
     num_samples = len(data[1])
-    img_shape = data[1][1].shape
-    print(f"{data[0][0]}, # total: {num_samples}")
-    arr_shape = (num_samples,) + img_shape
-    arr_data = np.zeros(arr_shape)
-    arr_labels = np.zeros(num_samples) + i
-    for j in range(num_samples):
-        arr_data[j, :] = data[1][j]
-    #
-    output = {}
-    output["labels"] = arr_labels
-    output["channels"] = channel_order
-    output["images"] = arr_data
-    out_path = out_path_base + '\\' + data[0][0] + ".pickle"
-    pickle.dump(output, open(out_path, "wb" ))
-    print(f"Saved {data[0][0]} to {out_path}")
+    print(f"{data[0][0]}, # total: {num_samples}") 
+    
+    if num_samples != 0:
+        img_shape = data[1][1].shape
+        arr_shape = (num_samples,) + img_shape
+        arr_data = np.zeros(arr_shape)
+        arr_labels = np.zeros(num_samples) + i
+        for j in range(num_samples):
+            arr_data[j, :] = data[1][j]
+        #
+        output = {}
+        output["labels"] = arr_labels
+        output["channels"] = channel_order
+        output["images"] = arr_data
+        out_path = out_path_base + '\\' + data[0][0] + ".pickle"
+        pickle.dump(output, open(out_path, "wb" ))
+        print(f"Saved {data[0][0]} to {out_path}")
