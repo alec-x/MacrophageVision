@@ -227,8 +227,8 @@ class MainApplication(tk.Frame):
         x, y = self.display.can.x, self.display.can.y
         vert_ratio = self.display.vert_ratio.get()
         horz_ratio = self.display.horz_ratio.get()
-        x = min(max(IMAGE_SIZE*vert_ratio/2, x), self.display.can.winfo_width() - IMAGE_SIZE*vert_ratio/2)
-        y = min(max(IMAGE_SIZE*horz_ratio/2, y), self.display.can.winfo_height() - IMAGE_SIZE*horz_ratio/2)
+        x = min(max(IMAGE_SIZE*vert_ratio/2 + 1, x), self.display.can.winfo_width() - IMAGE_SIZE*vert_ratio/2 - 1)
+        y = min(max(IMAGE_SIZE*horz_ratio/2 + 1, y), self.display.can.winfo_height() - IMAGE_SIZE*horz_ratio/2 - 1)
         page = int(self.curr_page.get())
         stack[page].append((x,y))
         self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
