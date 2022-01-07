@@ -226,8 +226,8 @@ class MainApplication(tk.Frame):
         
     def add_to_stack(self, stack):
         x, y = self.display.can.x, self.display.can.y
-        x = min(max(IMAGE_SIZE*self.display.vert_ratio.get()/2, x), self.display.can.winfo_width())
-        y = min(max(IMAGE_SIZE*self.display.horz_ratio.get()/2, y), self.display.can.winfo_height())
+        x = min(max(IMAGE_SIZE*self.display.vert_ratio.get()/2, x), self.display.can.winfo_width() - IMAGE_SIZE*self.display.vert_ratio.get()/2)
+        y = min(max(IMAGE_SIZE*self.display.horz_ratio.get()/2, y), self.display.can.winfo_height() - IMAGE_SIZE*self.display.horz_ratio.get()/2)
         page = int(self.curr_page.get())
         stack[page].append((x,y))
         self.display.draw_markers(self.certain_stack[page], self.uncertain_stack[page])
