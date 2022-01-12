@@ -218,10 +218,10 @@ class MainApplication(tk.Frame):
 
         if out_snippets_certain:
             pickle.dump(out_snippets_certain, open(out_certain, "wb" ))
-            print("saved uncertain snippets to: " + out_uncertain)
+            print("saved certain snippets to: " + out_uncertain)
         if out_snippets_uncertain:
             pickle.dump(out_snippets_uncertain, open(out_uncertain, "wb" ))
-            print("saved certain snippets to: " + out_certain)
+            print("saved uncertain snippets to: " + out_certain)
         
     def add_to_stack(self, stack):
         x, y = self.display.can.x, self.display.can.y
