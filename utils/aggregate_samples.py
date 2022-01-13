@@ -15,18 +15,17 @@ def get_all_files(path, extension):
 
     return pathlist
 
-out_path_base = ".\data\processed"
-base = r'D:\data\processed\autof_july_2021'
+out_path_base = ".\data\processed\kerryn_dec"
+base = r'C:/Repos/MacVis2/data/interim/kerryn_dec_by_treatment'
 
-paths = [("alveolar", base + r'\alveolar_autof\certain'),
-         ("marrow", base + r'\bm_autof\certain'),
-         ("monocyte", base + r'\monocytes_autof\certain')]
+paths = [("M0", base + r'\M0'),
+         ("M1", base + r'\M1'),
+         ("M2", base + r'\M2')]
 
 # Alveolar autof: ["green", "red", "blue", "bf"]   
 # BM autof: ["green", "blue", "red", "bf"]   
 # Monocytes autof: ["green", "red", "blue", "bf"]  
-channel_order = [["green", "red", "blue", "bf"],
-                 ["green", "blue", "red", "bf"]]
+channel_order = ["bf", "green", "CD80", "CD206"]
 
 labels = [get_all_files(path[1], "pickle") for path in paths]
 #[[path_1,path_2,path_3,path_4],[...,...,...,...]]
