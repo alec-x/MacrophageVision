@@ -15,3 +15,7 @@ ML/models/
 ML/model
 ML/out/
 ML/curr_run/
+ML/model_fold_0
+ML/model_fold_1
+ML/test_data_fold_0
+ML/test_data_fold_1
