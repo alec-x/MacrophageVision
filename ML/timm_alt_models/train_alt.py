@@ -103,8 +103,6 @@ parser.add_argument('--img-size', type=int, default=None, metavar='N',
                     help='Image patch size (default: None => model default)')
 parser.add_argument('--input-size', default=None, nargs=3, type=int,
                     metavar='N N N', help='Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty')
-parser.add_argument('--crop-pct', default=None, type=float,
-                    metavar='N', help='Input image center crop percent (for validation only)')
 parser.add_argument('--mean', type=float, nargs='+', default=None, metavar='MEAN',
                     help='Override mean pixel value of dataset')
 parser.add_argument('--std', type=float, nargs='+', default=None, metavar='STD',
@@ -117,8 +115,8 @@ parser.add_argument('-vb', '--validation-batch-size', type=int, default=None, me
                     help='validation batch size override (default: None)')
 
 # Optimizer parameters
-parser.add_argument('--opt', default='sgd', type=str, metavar='OPTIMIZER',
-                    help='Optimizer (default: "sgd"')
+parser.add_argument('--opt', default='ada', type=str, metavar='OPTIMIZER',
+                    help='Optimizer (default: "adam"')
 parser.add_argument('--opt-eps', default=None, type=float, metavar='EPSILON',
                     help='Optimizer Epsilon (default: None, use opt default)')
 parser.add_argument('--opt-betas', default=None, type=float, nargs='+', metavar='BETA',
@@ -176,15 +174,15 @@ parser.add_argument('--decay-rate', '--dr', type=float, default=0.1, metavar='RA
 # Augmentation & regularization parameters
 parser.add_argument('--no-aug', action='store_true', default=False,
                     help='Disable all training augmentation, override other train aug args')
-parser.add_argument('--scale', type=float, nargs='+', default=[0.08, 1.0], metavar='PCT',
+parser.add_argument('--scale', type=float, nargs='+', default=[1.0, 1.0], metavar='PCT',
                     help='Random resize scale (default: 0.08 1.0)')
-parser.add_argument('--ratio', type=float, nargs='+', default=[3./4., 4./3.], metavar='RATIO',
+parser.add_argument('--ratio', type=float, nargs='+', default=[1.0, 1.0], metavar='RATIO',
                     help='Random resize aspect ratio (default: 0.75 1.33)')
-parser.add_argument('--hflip', type=float, default=0.5,
+parser.add_argument('--hflip', type=float, default=0.,
                     help='Horizontal flip training aug probability')
 parser.add_argument('--vflip', type=float, default=0.,
                     help='Vertical flip training aug probability')
-parser.add_argument('--color-jitter', type=float, default=0.4, metavar='PCT',
+parser.add_argument('--color-jitter', type=float, default=0., metavar='PCT',
                     help='Color jitter factor (default: 0.4)')
 parser.add_argument('--aa', type=str, default=None, metavar='NAME',
                     help='Use AutoAugment policy. "v0" or "original". (default: None)'),
@@ -567,7 +565,6 @@ def main():
         std=data_config['std'],
         num_workers=args.workers,
         distributed=args.distributed,
-        crop_pct=data_config['crop_pct'],
         pin_memory=args.pin_mem,
     )
 
