@@ -25,21 +25,23 @@ $output_dir = @(
 )
 
 $output_name = 'M0', 'M1', 'M2'
+$fold = 1..5
 
 conda activate MacVis2
 
 foreach($i in 0..4){
     md -Force $output_dir[$i]
-    foreach ($name in $output_name){
-        foreach($k in 1..5)
-        python .\ML\timm_alt_models\inference_alt.py `
-        .\data\processed\dataset_split\validation\$name `
+    foreach($k in 1..5){
+        python .\ML\timm_alt_models\train_alt.py `
+        ".\data\processed\dataset_split\fold_${k}" `
         --model $architecture[$i] `
         --input-size 3 96 96 `
-        --checkpoint $model[$i] `
+        --epochs 50 `
         --num-classes 3 -b 50 `
-        --topk 1 `
-        --output_dir $output_dir[$i] `
-        --output_name "${name_fold}_${k}"
-    }     
+        --train-split "train" `
+        --val-split "validation" `
+        --weight-decay 1e-4 `
+        --opt "adam" `
+        --checkpoint-hist 1
+    }
 }
