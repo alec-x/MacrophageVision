@@ -24,9 +24,6 @@ $output_dir = @(
     '.\output\test\resnext'
 )
 
-$output_name = 'M0', 'M1', 'M2'
-$fold = 1..5
-
 conda activate MacVis2
 
 foreach($i in 0..4){
