@@ -9,6 +9,7 @@ import os
 import time
 import argparse
 import logging
+from importlib_metadata import files
 import numpy as np
 import torch
 
@@ -112,19 +113,28 @@ def main(raw_args=None):
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
-
+            """
             if batch_idx % args.log_freq == 0:
                 _logger.info('Predict: [{0}/{1}] Time {batch_time.val:.3f} ({batch_time.avg:.3f})'.format(
                     batch_idx, len(loader), batch_time=batch_time))
+            """
 
     topk_ids = np.concatenate(topk_ids, axis=0)
     label_probs = np.concatenate(label_probs, axis=0)
-
+    # modified to only work with M0/M1/M2
+    truth_conv = {"M0":0, "M1":1, "M2":2, }
+    total_num = 0
+    correct = 0
     with open(os.path.join(args.output_dir, args.output_name), 'w') as out_file:
-        filenames = loader.dataset.filenames(basename=True)
-        for filename, topk, label in zip(filenames, topk_ids, label_probs):
-            out_file.write('{0},{1},{2}\n'.format(
-                filename, ','.join([ str(v) for v in topk]), ','.join([str(v.item()) for v in label])))
-
+        filenames = loader.dataset.filenames(basename=False)
+        truths = [truth_conv[i.split('\\')[1]] for i in filenames]
+        
+        for truth, topk in zip(truths, topk_ids):
+            correct += (truth==topk[0])
+            total_num += 1
+            out_file.write('{0},{1}\n'.format(
+                truth, topk[0]))
+    acc = correct/total_num
+    _logger.info(f'Accuracy:{acc:%}')
 if __name__ == '__main__':
     main()
