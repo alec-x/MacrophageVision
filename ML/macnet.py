@@ -5,9 +5,9 @@ from torch import sigmoid
 
 class Net(nn.Module):
 
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, num_input_ch):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(2, 32, 3)
+        self.conv1 = nn.Conv2d(num_input_ch, 32, 3)
         self.conv1a = nn.Conv2d(32, 32, 3)
         self.conv2 = nn.Conv2d(32, 64, 3)
         self.conv2a = nn.Conv2d(64, 64, 3)
