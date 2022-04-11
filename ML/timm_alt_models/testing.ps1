@@ -57,11 +57,11 @@ $output_dir = @(
 )
 
 $dataset = @(
-    '.\data\processed\dataset_split\fold_1\',
-    '.\data\processed\dataset_split\fold_2\',
-    '.\data\processed\dataset_split\fold_3\',
-    '.\data\processed\dataset_split\fold_4\',
-    '.\data\processed\dataset_split\fold_5\'
+    '.\data\processed\dataset_split\fold_1\test',
+    '.\data\processed\dataset_split\fold_2\test',
+    '.\data\processed\dataset_split\fold_3\test',
+    '.\data\processed\dataset_split\fold_4\test',
+    '.\data\processed\dataset_split\fold_5\test'
 )
 
 conda activate MacVis2

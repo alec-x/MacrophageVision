@@ -127,7 +127,7 @@ def main(raw_args=None):
     correct = 0
     with open(os.path.join(args.output_dir, args.output_name), 'w') as out_file:
         filenames = loader.dataset.filenames(basename=False)
-        truths = [truth_conv[i.split('\\')[1]] for i in filenames]
+        truths = [truth_conv[i.split('\\')[0]] for i in filenames]
         
         for truth, topk in zip(truths, topk_ids):
             correct += (truth==topk[0])
